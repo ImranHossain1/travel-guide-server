@@ -31,6 +31,7 @@ async function run(){
     const destinationCollection = client.db('TravelGuide').collection('destinations');
     const bookedDestinationCollection = client.db('TravelGuide').collection('booking');
     const photosCollection = client.db('TravelGuide').collection('photos');
+    const reviewCollection = client.db('TravelGuide').collection('reviews');
     const userCollection = client.db('TravelGuide').collection('users');
     const paymentCollection = client.db('TravelGuide').collection('payments');
 
@@ -159,6 +160,16 @@ async function run(){
       const query ={ _id: ObjectId(id)};
       const booking =await bookedDestinationCollection.findOne(query);
       res.send(booking)
+    })
+    //Post Review
+    app.post('/review',verifyJWT, async(req,res)=>{
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result)
+    })
+    app.get('/review', async(req,res)=>{
+      const review = await reviewCollection.find().toArray();
+      res.send(review)
     })
 
     //Payment
