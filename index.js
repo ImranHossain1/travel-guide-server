@@ -6,7 +6,8 @@ require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 var nodemailer = require('nodemailer');
 var sgTransport = require('nodemailer-sendgrid-transport');
-
+const res = require('express/lib/response');
+const req = require('express/lib/request');
 
 const app= express();
 app.use(cors());
@@ -41,6 +42,7 @@ const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
 
 function sendConfirmBookingEmail(confirmBooking){
     const {userEmail, userName, bookingName, date} = confirmBooking;
+    //console.log(confirmBooking)
     var email = {
       from: process.env.EMAIL_SENDER,
       to: userEmail,
@@ -67,7 +69,34 @@ function sendConfirmBookingEmail(confirmBooking){
       }
     });
 }
-
+function sendPaymentConfirmationEmail(booking){
+  const {userEmail, userName, bookingName, date} = booking;
+  var email = {
+    from: process.env.EMAIL_SENDER,
+    to: userEmail,
+    subject: `We have received your payment for ${bookingName} is on ${date} is confirmed`,
+    text: `Your payment for this Appointment for ${bookingName} is on ${date} is confirmed`,
+    html: `
+      <div>
+        <h1>Hello ${userName}</h1>
+        <h3>Thank you for your payment.</h3>
+        <p>We have received your payment ${date}</p>
+        <h3>Our Address</h3>
+        <p>Ginnheimer Landstr 42</p>
+        <p>Frankfurt Am Main</p>
+        <p>Germany</p>
+        <a href="https://www.facebook.com/imran1402/">Unsubscribe</a>
+      </div>`
+  };
+  emailClient.sendMail(email, function(err, info){
+    if (err ){
+      console.log(err);
+    }
+    else {
+      console.log('Message sent: ' , info);
+    }
+  });
+}
 
 async function run(){
   try{
@@ -232,6 +261,8 @@ async function run(){
       }
       const result = await paymentCollection.insertOne(payment);
       const updatedBooking = await bookedDestinationCollection.updateOne(filter, updatedDoc);
+      const booking = await bookedDestinationCollection.findOne(filter);
+      sendPaymentConfirmationEmail(booking);
       res.send(updatedDoc)
     })
     app.post('/create-payment-intent',verifyJWT, async(req,res)=>{
