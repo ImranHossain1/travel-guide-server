@@ -4,9 +4,15 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+var nodemailer = require('nodemailer');
+var sgTransport = require('nodemailer-sendgrid-transport');
+
+
 const app= express();
 app.use(cors());
 app.use(express.json());
+
+
 const port = process.env.PORT || 5000
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6hmhs.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -25,6 +31,44 @@ function verifyJWT(req, res, next){
     next();
   });
 }
+
+const emailSenderOptions = {
+  auth: {
+    api_key: process.env.EMAIL_SENDER_KEY
+  }
+}
+const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+
+function sendConfirmBookingEmail(confirmBooking){
+    const {userEmail, userName, bookingName, date} = confirmBooking;
+    var email = {
+      from: process.env.EMAIL_SENDER,
+      to: userEmail,
+      subject: `Your Booking for ${bookingName} is on ${date} is confirmed`,
+      text: `Your Booking for ${bookingName} is on ${date} is confirmed`,
+      html: `
+        <div>
+          <h1>Hello ${userName}</h1>
+          <h3>Your Appointment for ${bookingName} is Confirmed</h3>
+          <p>Looking Forword to see you on ${date}</p>
+          <h3>Our Address</h3>
+          <p>Ginnheimer Landstr 42</p>
+          <p>Frankfurt Am Main</p>
+          <p>Germany</p>
+          <a href="https://www.facebook.com/imran1402/">Unsubscribe</a>
+        </div>`
+    };
+    emailClient.sendMail(email, function(err, info){
+      if (err ){
+        console.log(err);
+      }
+      else {
+        console.log('Message sent: ' , info);
+      }
+    });
+}
+
+
 async function run(){
   try{
     await client.connect();
@@ -123,8 +167,11 @@ async function run(){
            return res.send({success: false, confirmBooking: exists})
        }
       const result =await bookedDestinationCollection.insertOne(confirmBooking);
+      sendConfirmBookingEmail(confirmBooking)
       return res.send({success: true,result});
     })
+
+
     app.get('/user', verifyJWT, async(req,res)=>{
       const user = await userCollection.find().toArray();
       res.send(user);
