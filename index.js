@@ -69,6 +69,28 @@ function sendConfirmBookingEmail(confirmBooking){
       }
     });
 }
+/* function sendEmergencyEmail(mail){
+    const {senderEmail, subject, body} = mail;
+    //console.log(confirmBooking)
+    var email = {
+      from: senderEmail,
+      to: process.env.EMAIL_SENDER,
+      subject: {subject},
+      text: {subject},
+      html: `
+        <div>
+          <p>${body}</p>
+        </div>`
+    };
+    emailClient.sendMail(email, function(err, info){
+      if (err){
+        console.log(err);
+      }
+      else{
+        console.log('Message sent: ' , info);
+      }
+    });
+} */
 function sendPaymentConfirmationEmail(booking){
   const {userEmail, userName, bookingName, date} = booking;
   var email = {
@@ -107,6 +129,7 @@ async function run(){
     const reviewCollection = client.db('TravelGuide').collection('reviews');
     const userCollection = client.db('TravelGuide').collection('users');
     const paymentCollection = client.db('TravelGuide').collection('payments');
+    const messagesCollection = client.db('TravelGuide').collection('messages');
 
     const verifyAdmin = async(req, res, next)=>{
       const requester = req.decoded.email;
@@ -140,7 +163,7 @@ async function run(){
       res.send(result);
     })
     // Add New Travel Destination
-    app.post('/destination',verifyJWT, async(req,res)=>{
+    app.post('/destination',verifyJWT,verifyAdmin, async(req,res)=>{
       const destination = req.body;
       const result = await destinationCollection.insertOne(destination);
       res.send(result)
@@ -159,7 +182,7 @@ async function run(){
     })
 
     //add user information to the database
-    app.put('/user/:email', async(req,res)=>{
+    app.put('/user/:email',verifyJWT, async(req,res)=>{
       const email = req.params.email;
       const user = req.body;
       const filter = {email: email};
@@ -172,7 +195,7 @@ async function run(){
       res.send({result, token});
     })
     //Get perticular User
-    app.get('/user/:email', async(req, res)=>{
+    app.get('/user/:email',verifyJWT, async(req, res)=>{
       const email= req.params.email;
       const filter = {email: email};
       const result = await userCollection.findOne(filter);
@@ -180,12 +203,12 @@ async function run(){
     })
 
     // Get users from DB
-    app.get('/users', verifyJWT, async(req,res)=>{
+    app.get('/users', verifyJWT,verifyAdmin, async(req,res)=>{
       const users = await userCollection.find().toArray();
       res.send(users);
     })
     //add a new booking user 
-    app.post('/bookedDestination',verifyJWT, async(req,res)=>{
+    app.post('/bookedDestination',verifyJWT,verifyAdmin, async(req,res)=>{
       const confirmBooking = req.body;
       
       const query = {date: confirmBooking.date, userName: confirmBooking.userName};
@@ -201,12 +224,12 @@ async function run(){
     })
 
 
-    app.get('/user', verifyJWT, async(req,res)=>{
+    app.get('/user', verifyJWT,verifyAdmin, async(req,res)=>{
       const user = await userCollection.find().toArray();
       res.send(user);
     })
     //verify user role
-    app.get('/admin/:email',verifyJWT, async(req,res)=>{
+    app.get('/admin/:email',verifyJWT,verifyAdmin, async(req,res)=>{
       const email = req.params.email;
       const user = await userCollection.findOne({email:email})
       const isAdmin = user.role ==='admin';
@@ -224,7 +247,7 @@ async function run(){
     })
 
     //get user bookings from DB
-    app.get('/booking', async(req,res)=>{
+    app.get('/booking',verifyJWT, async(req,res)=>{
       const userEmail = req.query.userEmail;
       const query = {userEmail: userEmail}
       const bookings = await bookedDestinationCollection.find(query).toArray();
@@ -277,6 +300,40 @@ async function run(){
       res.send({
         clientSecret: paymentIntent.client_secret
       })
+    })
+    app.post('/email', async(req, res)=>{
+      mail = req.body;
+      const result = await messagesCollection.insertOne(mail);
+      res.send(result);
+    })
+    app.get('/notifications',verifyJWT, verifyAdmin, async(req, res)=>{
+      const result = await messagesCollection.find().toArray();
+      res.send(result)
+    })
+    app.get('/notification/:id',verifyJWT, verifyAdmin, async(req, res)=>{
+      const id = req.params.id;
+      //console.log(id);
+      const query ={ _id: ObjectId(id)};
+      const result =await messagesCollection.findOne(query);
+      res.send(result)
+    })
+    app.patch('/notification/:id',verifyJWT, verifyAdmin, async(req, res)=>{
+      const id= req.params.id;
+      const status= req.body
+      const filter ={_id : ObjectId(id)};;
+      const updatedDoc = {
+        $set : {
+          unread: status.unread,
+        }
+      }
+      const result = await messagesCollection.updateOne(filter, updatedDoc);
+      res.send(result)
+    })
+    app.delete('/notification/:id',verifyJWT, verifyAdmin, async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id:ObjectId(id)}
+      const result = await messagesCollection.deleteOne(filter);
+      res.send(result);
     })
   }
   finally{
