@@ -229,7 +229,7 @@ async function run(){
       res.send(user);
     })
     //verify user role
-    app.get('/admin/:email',verifyJWT,verifyAdmin, async(req,res)=>{
+    app.get('/admin/:email',verifyJWT, async(req,res)=>{
       const email = req.params.email;
       const user = await userCollection.findOne({email:email})
       const isAdmin = user.role ==='admin';
