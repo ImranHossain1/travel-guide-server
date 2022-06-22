@@ -344,9 +344,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-  res.send('Hello from car dealer!')
+  res.send('Hello from Travel Guide DE!')
 })
 
 app.listen(port, () => {
-  console.log(`car dealer app listening on port ${port}`)
+  console.log(`Travel Guide DE app listening on port ${port}`)
 })
