@@ -208,7 +208,7 @@ async function run(){
       res.send(users);
     })
     //add a new booking user 
-    app.post('/bookedDestination',verifyJWT,verifyAdmin, async(req,res)=>{
+    app.post('/bookedDestination',verifyJWT, async(req,res)=>{
       const confirmBooking = req.body;
       
       const query = {date: confirmBooking.date, userName: confirmBooking.userName};
@@ -306,7 +306,7 @@ async function run(){
       const result = await messagesCollection.insertOne(mail);
       res.send(result);
     })
-    app.get('/notifications',verifyJWT, verifyAdmin, async(req, res)=>{
+    app.get('/notifications',verifyJWT, async(req, res)=>{
       const result = await messagesCollection.find().toArray();
       res.send(result)
     })
