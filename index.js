@@ -175,6 +175,13 @@ async function run(){
       const photos =await cursor.toArray();
       res.send(photos);
     })
+
+    app.get('/destinationPhoto/:name', async(req,res)=>{
+      const name = req.params.name;
+      const query ={ place: name};
+      const photos =await photosCollection.find(query).toArray();
+      res.send(photos)
+    })
     app.post('/photos',verifyJWT, async(req,res)=>{
       const photo = req.body;
       const result = await photosCollection.insertOne(photo);
