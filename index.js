@@ -12,7 +12,7 @@ const req = require('express/lib/request');
 const app= express();
 app.use(cors());
 app.use(express.json());
-// app.use(cors({origin: 'https://tourism-guide-ddb6e.firebaseapp.com/'}))
+app.use(cors({origin: 'https://tourism-guide-ddb6e.firebaseapp.com/'}))
 
 const port = process.env.PORT || 5000
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6hmhs.mongodb.net/?retryWrites=true&w=majority`;
