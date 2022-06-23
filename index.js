@@ -254,15 +254,9 @@ async function run(){
     })
 
     //get user bookings from DB
-    app.get('/booking',verifyJWT, async(req,res)=>{
-      const userEmail = req.query.userEmail;
-      const query = {userEmail: userEmail}
-      const bookings = await bookedDestinationCollection.find(query).toArray();
-      res.send(bookings);
-    })
-    app.get('/booking/:email', async(req,res)=>{
+
+    app.get('/booking/:email',verifyJWT, async(req,res)=>{
         const email = req.params.email;
-        // console.log(email)
         const query = {userEmail: email}
         const bookings = await bookedDestinationCollection.find(query).toArray();
         res.send(bookings);
