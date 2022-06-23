@@ -286,7 +286,7 @@ async function run(){
     })
 
     //Payment
-    app.patch('/booking/:id', verifyJWT, async(req,res)=>{
+    app.patch('/booking/:id', async(req,res)=>{
       const id = req.params.id;
       const payment = req.body;
       const filter ={_id : ObjectId(id)};;
@@ -302,7 +302,7 @@ async function run(){
       sendPaymentConfirmationEmail(booking);
       res.send(updatedDoc)
     })
-    app.post('/create-payment-intent',verifyJWT, async(req,res)=>{
+    app.post('/create-payment-intent', async(req,res)=>{
       const booking = req.body;
       const cost = booking.cost;
       const amount = cost*100;
