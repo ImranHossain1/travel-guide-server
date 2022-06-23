@@ -260,12 +260,25 @@ async function run(){
       const bookings = await bookedDestinationCollection.find(query).toArray();
       res.send(bookings);
     })
+    app.get('/booking/:email', async(req,res)=>{
+        const email = req.params.email;
+        // console.log(email)
+        const query = {userEmail: email}
+        const bookings = await bookedDestinationCollection.find(query).toArray();
+        res.send(bookings);
+    })
 
     app.get('/booking/:id',verifyJWT, async(req,res)=>{
       const id = req.params.id;
       const query ={ _id: ObjectId(id)};
       const booking =await bookedDestinationCollection.findOne(query);
       res.send(booking)
+    })
+    app.delete('/booking/:id',verifyJWT, verifyAdmin, async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id:ObjectId(id)}
+      const result = await bookedDestinationCollection.deleteOne(filter);
+      res.send(result);
     })
     //Post Review
     app.post('/review',verifyJWT, async(req,res)=>{
