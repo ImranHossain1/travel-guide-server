@@ -255,20 +255,26 @@ async function run(){
 
     //get user bookings from DB
 
-    app.get('/booking/:email',verifyJWT, async(req,res)=>{
-        const email = req.params.email;
-        const query = {userEmail: email}
-        const bookings = await bookedDestinationCollection.find(query).toArray();
-        res.send(bookings);
-    })
+    app.get('/booking', verifyJWT, async(req,res)=>{
+        const email = req.query.user;
+        const decodedEmail = req.decoded.email;
+        if(email === decodedEmail){
+          const query = {userEmail: email};
+          const bookings = await bookedDestinationCollection.find(query).toArray();
+          return res.send(bookings);
+        }
+        else{
+          return res.status(403).send({message: 'Forbidden Access'});
+        }    
+    }) 
 
-    app.get('/booking/:id',verifyJWT, async(req,res)=>{
+    app.get('/booking/:id', async(req,res)=>{
       const id = req.params.id;
       const query ={ _id: ObjectId(id)};
       const booking =await bookedDestinationCollection.findOne(query);
       res.send(booking)
     })
-    app.delete('/booking/:id',verifyJWT, verifyAdmin, async(req,res)=>{
+    app.delete('/booking/:id',verifyJWT, async(req,res)=>{
       const id = req.params.id;
       const filter = {_id:ObjectId(id)}
       const result = await bookedDestinationCollection.deleteOne(filter);
@@ -286,7 +292,7 @@ async function run(){
     })
 
     //Payment
-    app.patch('/booking/:id', async(req,res)=>{
+     app.patch('/booking/:id',verifyJWT, async(req,res)=>{
       const id = req.params.id;
       const payment = req.body;
       const filter ={_id : ObjectId(id)};;
@@ -302,9 +308,10 @@ async function run(){
       sendPaymentConfirmationEmail(booking);
       res.send(updatedDoc)
     })
-    app.post('/create-payment-intent', async(req,res)=>{
+     app.post('/create-payment-intent',verifyJWT, async(req,res)=>{
       const booking = req.body;
       const cost = booking.cost;
+      console.log(cost);
       const amount = cost*100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -314,7 +321,7 @@ async function run(){
       res.send({
         clientSecret: paymentIntent.client_secret
       })
-    })
+    }) 
     app.post('/email', async(req, res)=>{
       mail = req.body;
       const result = await messagesCollection.insertOne(mail);
